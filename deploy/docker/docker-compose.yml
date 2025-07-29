@@ -44,6 +44,8 @@ services:
       DATABASE_URL: "postgres://qatrackplus:qatrackplus_password@db:5432/qatrackplus"
       # Redis connection settings (must match redis service name)
       REDIS_URL: "redis://redis:6379/0"
+      ADMIN_NAME: "Jinkoo Kim"
+      ADMIN_EMAIL: "jinkoo.kim@stonybrookmedicine.edu"
     depends_on:
       - db # Ensure db service starts before app
       - redis # Ensure redis service starts before app

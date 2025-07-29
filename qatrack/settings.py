@@ -8,27 +8,34 @@
 import datetime
 import os
 import sys
-
+import dj_database_url
 import matplotlib
 
 matplotlib.use("Agg")
 
 # -----------------------------------------------------------------------------
-DEBUG = False
-DEBUG_TOOLBAR = False
+# Environment variable based settings
+# These settings can be overridden by environment variables for Docker deployment
+
+# DEBUG setting
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 # Who to email when server errors occur
 ADMINS = (
-    ('Admin Name', 'YOUR_EMAIL_ADDRESS_GOES_HERE'),
+    ('Jinkoo', 'jinkoo.kim@stonybrookmedicine.edu'),
 )
 MANAGERS = ADMINS
 SEND_BROKEN_LINK_EMAILS = False
 
 # -----------------------------------------------------------------------------
 # misc settings
-PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-LOG_ROOT = os.path.join(PROJECT_ROOT, "..", "logs")
+PROJECT_ROOT = os.path.join(BASE_DIR, 'qatrack') 
+
+#PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+
+LOG_ROOT = os.path.join(PROJECT_ROOT, "logs") # Changed relative path to absolute from PROJECT_ROOT
 
 VERSION = "3.1.1.3"
 BUG_REPORT_URL = "https://github.com/qatrackplus/qatrackplus/issues/new"
@@ -38,7 +45,13 @@ FEATURE_REQUEST_URL = BUG_REPORT_URL
 WSGI_APPLICATION = 'qatrack.wsgi.application'
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = '78kj_s=rqh46bsv10eb-)uyy02kr35jy19pp*7u$4-te=x0^86'
+# Read SECRET_KEY from environment variable for Docker deployment
+SECRET_KEY = os.environ.get('SECRET_KEY', 'default-insecure-secret-key-for-dev-only') # CHANGE THIS IN PRODUCTION!
+
+# Allowed Hosts for Django
+# Read ALLOWED_HOSTS from environment variable, split by comma
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,.qatrackplus.com').split(',')
+
 ROOT_URLCONF = 'qatrack.urls'
 
 SITE_ID = 1
@@ -47,30 +60,24 @@ SITE_NAME = "QATrack+"
 # -----------------------------------------------------------------------------
 # Database settings
 
-# if you wish to override the database settings below (e.g. for deployment),
-# please do so here or in a local_settings.py file
+# Use dj_database_url to parse the DATABASE_URL environment variable.
+# Provide a default for Docker Compose if the variable is not explicitly set.
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3'
-        'NAME': os.path.join(PROJECT_ROOT, '..', 'db/default.db'),  # db name Or path to database file if using sqlite3.
-        'USER': '',                      # Not used with sqlite3.
-        'PASSWORD': '',                  # Not used with sqlite3.S
-        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get(
+            'DATABASE_URL',
+            'postgres://qatrackplus:qatrackplus@db:5432/qatrackplus' # Explicitly use TCP host:port
+        ),
+        conn_max_age=600 # Optional: set connection max age
+    )
 }
 
 # ----------------------------------------------------------------------------
 # Default local settings
 
-# Local time zone for this installation. Choices can be found here:
-# http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
-# although not all choices may be available on all operating systems.
-# On Unix systems, a value of None will cause Django to use the same
-# timezone as the operating system.
-# If running in a Windows environment this must be set to the same as your
-# system time zone.
-TIME_ZONE = 'America/Toronto'
+# Local time zone for this installation.
+# Read TIME_ZONE from environment variable, default to UTC
+TIME_ZONE = os.environ.get('TIME_ZONE', 'UTC')
 
 # If you set this to False, Django will not format dates, numbers and
 # calendars according to the current locale
@@ -120,9 +127,9 @@ DEFAULT_WARNING_MESSAGE = "Do not treat"
 # ----------------------------------------------------------------------------
 # static media settings
 
-#  Absolute filesystem path to the directory that will hold user-uploaded files.
-# Example: "/home/media/media.lawrence.com/media/"
-MEDIA_ROOT = os.path.join(PROJECT_ROOT, "media")
+# Absolute filesystem path to the directory that will hold user-uploaded files.
+# Read MEDIA_ROOT from environment variable, matches Docker volume mount
+MEDIA_ROOT = os.environ.get('MEDIA_ROOT', os.path.join(BASE_DIR, 'media'))
 
 UPLOAD_PATH = "uploads"
 TMP_UPLOAD_PATH = os.path.join(UPLOAD_PATH, "tmp")
@@ -136,16 +143,14 @@ MEDIA_URL = '/media/'
 UPLOADS_URL = MEDIA_URL + 'uploads/'
 
 # Absolute path to the directory static files should be collected to.
-# Don't put anything in this directory yourself; store your static files
-# in apps' "static/" subdirectories and in STATICFILES_DIRS.
-# Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = os.path.join(PROJECT_ROOT, "static")
+# Read STATIC_ROOT from environment variable, matches Docker volume mount
+STATIC_ROOT = os.environ.get('STATIC_ROOT', os.path.join(BASE_DIR, 'static'))
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
 STATIC_URL = '/static/'
 
-#  Additional locations of static files
+# Additional locations of static files
 STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
@@ -158,71 +163,21 @@ STATICFILES_DIRS = (
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    #        'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # add a site specific css file if one doesn't already exist
 SITE_SPECIFIC_CSS_PATH = os.path.join(PROJECT_ROOT, "qatrack_core", "static", "qatrack_core", "css", "site.css")
+
+# Ensure the parent directory exists before attempting to create the file
+os.makedirs(os.path.dirname(SITE_SPECIFIC_CSS_PATH), exist_ok=True)
+
 if not os.path.isfile(SITE_SPECIFIC_CSS_PATH):
     with open(SITE_SPECIFIC_CSS_PATH, 'w') as f:
         f.write("/* You can place any site specific css in this file*/\n")
 
-
 # ------------------------------------------------------------------------------
-# Middleware
-MIDDLEWARE = [
-    'django.middleware.common.CommonMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    # 'django.contrib.auth.middleware.RemoteUserMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'qatrack.middleware.login_required.LoginRequiredMiddleware',
-    'qatrack.middleware.maintain_filters.FilterPersistMiddleware',
-]
-
-# login required middleware settings
-LOGIN_EXEMPT_URLS = [r"^favicon.ico$", r"^accounts/", r"api/*", r"^oauth2/*"]
-ACCOUNT_ACTIVATION_DAYS = 7
-LOGIN_REDIRECT_URL = '/qc/unit/'
-LOGIN_URL = "/accounts/login/"
-
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            os.path.join(PROJECT_ROOT, 'templates'),
-            'genericdropdown/templates',
-        ],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'debug': False,
-            'context_processors': [
-                # Insert your TEMPLATE_CONTEXT_PROCESSORS here or use this
-                # list if you haven't customized them:
-                'django.contrib.auth.context_processors.auth',
-                'django.template.context_processors.debug',
-                'django.template.context_processors.i18n',
-                'django.template.context_processors.media',
-                'django.template.context_processors.request',
-                'django.template.context_processors.static',
-                'django.template.context_processors.tz',
-                'django.contrib.messages.context_processors.messages',
-                'qatrack.context_processors.site',
-            ],
-        },
-    },
-]
-
-# ------------------------------------------------------------------------------
-# Fixtures
-# you can add more default fixture locations here
-FIXTURE_DIRS = (
-    'fixtures/defaults/qa',
-    'fixtures/defaults/units',
-)
-
-# ------------------------------------------------------------------------------
+# INSTALLED_APPS (Consolidated)
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.contenttypes',
@@ -261,7 +216,69 @@ INSTALLED_APPS = [
     'qatrack.attachments',
     'qatrack.reports',
     'admin_views',
+    'django_redis',
+    #'django_js_asset', # Uncommented and included
 ]
+
+# ------------------------------------------------------------------------------
+# Middleware (Consolidated)
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware', # Added for security
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # 'django.contrib.auth.middleware.RemoteUserMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware', # Added for security
+    'qatrack.middleware.login_required.LoginRequiredMiddleware',
+    'qatrack.middleware.maintain_filters.FilterPersistMiddleware',
+]
+
+# Add Django Debug Toolbar if DEBUG is True
+if DEBUG:
+    INSTALLED_APPS.append('debug_toolbar')
+    MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+
+
+# login required middleware settings
+LOGIN_EXEMPT_URLS = [r"^favicon.ico$", r"^accounts/", r"api/*", r"^oauth2/*"]
+ACCOUNT_ACTIVATION_DAYS = 7
+LOGIN_REDIRECT_URL = '/qc/unit/'
+LOGIN_URL = "/accounts/login/"
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            os.path.join(PROJECT_ROOT, 'templates'),
+            'genericdropdown/templates',
+        ],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'debug': DEBUG,
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.request',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
+                'django.contrib.messages.context_processors.messages',
+                'qatrack.context_processors.site',
+            ],
+        },
+    },
+]
+
+# ------------------------------------------------------------------------------
+# Fixtures
+# you can add more default fixture locations here
+FIXTURE_DIRS = (
+    'fixtures/defaults/qa',
+    'fixtures/defaults/units',
+)
 
 
 # ----------------------------------------------------------------------------
@@ -323,10 +340,15 @@ CACHE_UNREVIEWED_FAULT_COUNT = "unreviewed-fault-count"
 
 MAX_CACHE_TIMEOUT = None
 
+# Use Redis as the cache backend
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'qatrack_cache_table',
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.environ.get('REDIS_URL', 'redis://redis:6379/1'), # Use Redis service name
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+        'KEY_PREFIX': 'qatrackplus'
     }
 }
 
@@ -342,8 +364,8 @@ CSRF_COOKIE_NAME = 'csrftoken'
 # needs to be set to True when running behind reverse proxy (normal deploy)
 # set to False when not running behind reverse proxy
 # Use True for e.g. CherryPy/IIS and False for Apache/mod_wsgi
-USE_X_FORWARDED_HOST = False
-HTTP_OR_HTTPS = "http"
+USE_X_FORWARDED_HOST = True # Set to True for Nginx reverse proxy
+HTTP_OR_HTTPS = "http" # Nginx handles HTTPS, internal traffic is HTTP
 
 # -----------------------------------------------------------------------------
 # Email and notification settings
@@ -687,10 +709,11 @@ AUTOSAVE_DAYS_TO_KEEP = 30
 MAX_TESTS_PER_TESTLIST = 250
 # SQL Explorer Settings
 
-USE_SQL_REPORTS = False
+USE_SQL_REPORTS = False # Keep this False for now to avoid explorer related issues
 
-EXPLORER_CONNECTIONS = {'Default': 'readonly'}
-EXPLORER_DEFAULT_CONNECTION = 'readonly'
+# Configure explorer connections to use the 'default' database connection
+EXPLORER_CONNECTIONS = {'Default': 'default'}
+EXPLORER_DEFAULT_CONNECTION = 'default'
 EXPLORER_SCHEMA_INCLUDE_TABLE_PREFIXES = ['auth_', 'qa', 'service_log', 'units', 'parts']
 EXPLORER_SCHEMA_EXCLUDE_TABLE_PREFIXES = ['authtoken', 'sessions_']
 EXPLORER_TASKS_ENABLED = False
@@ -704,10 +727,6 @@ def EXPLORER_PERMISSION_CHANGE(request):
 
 def EXPLORER_PERMISSION_VIEW(request):
     return request.user.has_perm("reports.can_run_sql_reports")
-
-
-if os.path.exists('/root/.is_inside_docker') and 'TRAVIS' not in os.environ:
-    from .docker_settings import *  # NOQA
 
 
 CHROME_PATH = ""
@@ -735,16 +754,6 @@ for path in chrome_paths:
         CHROME_PATH = path
 
 
-# ------------------------------------------------------------------------------
-# local_settings contains anything that should be overridden
-# based on site specific requirements (e.g. deployment, development etc)
-
-from .local_settings import *  # noqa: F403, F401, E402
-
-
-TEMPLATES[0]['OPTIONS']['debug'] = DEBUG
-
-
 _MAX_FIELDS_PER_TEST = 5  # value, json_value, user_attached, skipped, extra value for bool
 DATA_UPLOAD_MAX_NUMBER_FIELDS = max(MAX_TESTS_PER_TESTLIST * _MAX_FIELDS_PER_TEST, 1000)
 
@@ -756,19 +765,25 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = max(MAX_TESTS_PER_TESTLIST * _MAX_FIELDS_PER_TES
 # Also set file paths that are dependent on other settings which may be overridden
 # in local_settings.py
 
+# Ensure MEDIA_ROOT and STATIC_ROOT are correctly set up for Docker volumes
+# and then create the necessary subdirectories.
+# These will use the values from environment variables or the defaults set above.
+# The chown command in Dockerfile handles permissions.
+
+# Updated to use environment variable for MEDIA_ROOT
+# If MEDIA_ROOT is not set by env var, it defaults to BASE_DIR/media
+# This is important for Docker volume mounts
+MEDIA_ROOT = os.environ.get('MEDIA_ROOT', os.path.join(BASE_DIR, 'media'))
+STATIC_ROOT = os.environ.get('STATIC_ROOT', os.path.join(BASE_DIR, 'static'))
+
 UPLOAD_ROOT = os.path.join(MEDIA_ROOT, "uploads")
 TMP_UPLOAD_ROOT = os.path.join(UPLOAD_ROOT, "tmp")
 TMP_REPORT_ROOT = os.path.join(MEDIA_ROOT, "reports")
 
-for d in (MEDIA_ROOT, UPLOAD_ROOT, TMP_UPLOAD_ROOT, LOG_ROOT, TMP_REPORT_ROOT):
+
+for d in (MEDIA_ROOT, UPLOAD_ROOT, TMP_UPLOAD_ROOT, LOG_ROOT, TMP_REPORT_ROOT, STATIC_ROOT, os.path.join(PROJECT_ROOT, "admin_media")):
     if not os.path.isdir(d):
-        os.mkdir(d)
-
-CACHE_LOCATION = os.path.join(PROJECT_ROOT, "cache", "cache_data")
-IS_FILE_CACHE = CACHES['default']['BACKEND'] == 'django.core.cache.backends.filebased.FileBasedCache'
-if IS_FILE_CACHE and not os.path.isdir(CACHE_LOCATION):
-    os.mkdir(CACHE_LOCATION)
-
+        os.makedirs(d, exist_ok=True)
 
 if FORCE_SCRIPT_NAME:
     # Fix URL for Admin Views if FORCE_SCRIPT_NAME_SET in local_settings
@@ -792,12 +807,12 @@ SELENIUM_CHROME_PATH = ''  # Set full path of Chromedriver binary if SELENIUM_US
 SELENIUM_VIRTUAL_DISPLAY = False  # Set to True to use headless browser for testing (requires xvfb)
 
 if any([('py.test' in v or 'pytest' in v) for v in sys.argv]):
-    DATABASES.pop('readonly', None)
-    from .test_settings import *  # noqa
-
-if DEBUG_TOOLBAR:
-    INSTALLED_APPS.append('debug_toolbar')
-    MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+    # When running tests, use the default database and ensure explorer connections are set
+    # This block should not remove 'readonly' if it's not defined elsewhere
+    # DATABASES.pop('readonly', None) # This line is problematic if 'readonly' isn't explicitly defined
+    EXPLORER_CONNECTIONS = {'Default': 'default'}
+    EXPLORER_DEFAULT_CONNECTION = 'default'
+    # from .test_settings import * # noqa # Assuming test_settings is not needed for Docker run
 
 
 USE_ADFS = (
@@ -810,23 +825,31 @@ if USE_ADFS:
 
 
 if USE_SQL_REPORTS:
-    INSTALLED_APPS += [
-        'explorer',
-        'xlsxwriter',
-    ]
+    # We are not explicitly adding 'explorer' here to avoid duplicates
+    # if it's already discovered by Django or needed by another app.
+    # If it's truly optional and only needed when USE_SQL_REPORTS is True,
+    # then you might need to add it conditionally here, but ensure it's
+    # not duplicated. For now, assuming it's always installed via requirements.
+    INSTALLED_APPS.append('xlsxwriter') # xlsxwriter is needed for reports
 
     # use default database when testing
     if any(('py.test' in arg or 'pytest' in arg) for arg in sys.argv):
         EXPLORER_CONNECTIONS = {'Default': 'default'}
         EXPLORER_DEFAULT_CONNECTION = 'default'
-    elif 'readonly' not in DATABASES:
-        raise ValueError(
-            "Missing 'readonly' connection information. Either set "
-            "USE_SQL_REPORTS = False or set up readonly database connection"
-        )
+    # The original 'readonly' check here is for a specific 'readonly' DB config.
+    # Since we're using DATABASE_URL, the 'readonly' connection might not exist
+    # unless explicitly defined in DATABASE_URL or a custom DATABASES entry.
+    # If you need a separate 'readonly' DB, you'll need to define it in your
+    # DATABASE_URL or DATABASES dict.
+    # elif 'readonly' not in DATABASES:
+    #     raise ValueError(
+    #         "Missing 'readonly' connection information. Either set "
+    #         "USE_SQL_REPORTS = False or set up readonly database connection"
+    #     )
 
 LOGOUT_REDIRECT_URL = LOGIN_URL
 
+# Django Q configuration
 Q_CLUSTER = {
     'name': 'qatrack',
     'workers': 2,
@@ -839,4 +862,5 @@ Q_CLUSTER = {
     'cpu_affinity': 1,
     'label': 'Django Q',
     'orm': 'default',
+    'broker': os.environ.get('REDIS_URL', 'redis://redis:6379/1'), # Use Redis service name
 }

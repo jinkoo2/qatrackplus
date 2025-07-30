@@ -1,0 +1,77 @@
+# docker-compose.yml for QATrack+
+# Version 3.8 is used for better compatibility with Docker Compose features.
+# version: '3.8' # obsolte
+
+services:
+  # PostgreSQL Database Service
+  db:
+    image: postgres:10-alpine # Use a lightweight PostgreSQL 10 image
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/ # Persistent volume for database data
+    environment:
+      # Database credentials (change these for production!)
+      POSTGRES_DB: qatrackplus
+      POSTGRES_USER: qatrackplus
+      POSTGRES_PASSWORD: qatrackplus_password # IMPORTANT: Change this password!
+    networks:
+      - qatrack_network # Connect to our custom network
+
+  # Redis Service (for Django Q background tasks)
+  redis:
+    image: redis:alpine # Use a lightweight Redis image
+    networks:
+      - qatrack_network # Connect to our custom network
+
+  # Django Application Service (Gunicorn)
+ services:
+  app:
+    # Remove or comment out the 'build' section:
+    # build:
+    #   context: ../../
+    #   dockerfile: ./deploy/docker/Dockerfile
+    image: jinkoo2/qatrackplus:latest # Add this line, using the tag you pushed
+    volumes:
+      # For production, you typically DON'T mount the source code:
+      # - ../../:/usr/src/qatrackplus # REMOVE THIS LINE for production deployments
+      - media_volume:/usr/src/qatrackplus/media
+      - static_volume:/usr/src/qatrackplus/static
+      - log_volume:/usr/src/qatrackplus/logs
+    environment:
+      SECRET_KEY: "your_actual_production_secret_key_here" # IMPORTANT: Use a NEW, STRONG secret key!
+      DEBUG: "False" # IMPORTANT: Set to False for production!
+      ALLOWED_HOSTS: "your_production_domain.com,your_production_ip" # Update with your server's domain/IP
+      DATABASE_URL: "postgres://qatrackplus:qatrackplus_password@db:5432/qatrackplus"
+      REDIS_URL: "redis://redis:6379/1"
+      ADMIN_NAME: "Production Admin"
+      ADMIN_EMAIL: "production@yourdomain.com"
+      TIME_ZONE: "America/New_York" # Set your actual production timezone
+    depends_on:
+      - db
+      - redis
+    restart: always
+    command: /usr/src/qatrackplus/deploy/docker/init.sh
+
+  # Nginx Web Server Service
+  nginx:
+    image: nginx:alpine # Use a lightweight Nginx image
+    volumes:
+      - static_volume:/vol/web/static # Mount static files from app service
+      - media_volume:/vol/web/media # Mount media files from app service
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro # Mount Nginx configuration
+    ports:
+      - "80:80" # Map host port 80 to container port 80
+    depends_on:
+      - app # Ensure app service starts before nginx
+    networks:
+      - qatrack_network # Connect to our custom network
+
+# Define named volumes for persistent data
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+
+# Define a custom network for inter-service communication
+networks:
+  qatrack_network:
+    driver: bridge

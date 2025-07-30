@@ -21,9 +21,19 @@ matplotlib.use("Agg")
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 # Who to email when server errors occur
+# Who to email when server errors occur
+# Expects separate environment variables for admin name and email
+ADMIN_NAME = os.environ.get('ADMIN_NAME', 'Admin')
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@example.com')
+
+print('ADMIN_NAME='+ADMIN_NAME)
+print('ADMIN_EMAIL='+ADMIN_EMAIL)
+
 ADMINS = (
-    ('Jinkoo', 'jinkoo.kim@stonybrookmedicine.edu'),
+    (ADMIN_NAME, ADMIN_EMAIL),
 )
+
+
 MANAGERS = ADMINS
 SEND_BROKEN_LINK_EMAILS = False
 
@@ -391,7 +401,7 @@ EMAIL_PORT = 587
 # Authentication backend settings
 AUTHENTICATION_BACKENDS = [
     'qatrack.accounts.backends.QATrackAccountBackend',
-    # 'qatrack.accounts.backends.ActiveDirectoryGroupMembershipSSLBackend',
+    'qatrack.accounts.backends.ActiveDirectoryGroupMembershipSSLBackend',
     # 'qatrack.accounts.backends.WindowsIntegratedAuthenticationBackend',
     # 'qatrack.accounts.backends.QATrackAdfsAuthCodeBackend',
 ]
@@ -404,13 +414,13 @@ ACCOUNTS_PASSWORD_RESET = True
 
 
 # active directory settings (not required if only using ModelBackend
-AD_DNS_NAME = ''  # e.g. ad.civic1.ottawahospital.on.ca
+AD_DNS_NAME = os.environ.get('AD_DNS_NAME', '')  # e.g. ad.civic1.ottawahospital.on.ca
 
 # If using non-SSL use these
-AD_LDAP_PORT = 389
-AD_LDAP_URL = 'ldap://%s:%s' % (AD_DNS_NAME, AD_LDAP_PORT)
-AD_LDAP_USER = ''  # only used for WindowsIntegratedAuthenticationBackend
-AD_LDAP_PW = ''  # only used for WindowsIntegratedAuthenticationBackend
+AD_LDAP_PORT = int(os.environ.get('AD_LDAP_PORT', 389)) # Cast to int
+AD_LDAP_URL = os.environ.get('AD_LDAP_URL', 'ldap://%s:%s' % (AD_DNS_NAME, AD_LDAP_PORT))
+AD_LDAP_USER = os.environ.get('AD_LDAP_USER', '')  # only used for WindowsIntegratedAuthenticationBackend
+AD_LDAP_PW = os.environ.get('AD_LDAP_PW', '')  # only used for WindowsIntegratedAuthenticationBackend
 
 AD_LU_ACCOUNT_NAME = "sAMAccountName"
 AD_LU_MAIL = "mail"
@@ -421,18 +431,18 @@ AD_LU_MEMBER_OF = "memberOf"
 # If using SSL use these:
 # AD_LDAP_PORT=636
 # AD_LDAP_URL='ldaps://%s:%s' % (AD_DNS_NAME,AD_LDAP_PORT)
+# You would uncomment and use these if configuring SSL/LDAPS
 
-AD_SEARCH_DN = ""  # eg "dc=ottawahospital,dc=on,dc=ca"
-AD_NT4_DOMAIN = ""  # Network domain that AD server is part of
+AD_SEARCH_DN = os.environ.get('AD_SEARCH_DN', '')  # eg "dc=ottawahospital,dc=on,dc=ca"
+AD_NT4_DOMAIN = os.environ.get('AD_NT4_DOMAIN', '')  # Network domain that AD server is part of
 
 AD_SEARCH_FIELDS = [AD_LU_MAIL, AD_LU_SURNAME, AD_LU_GIVEN_NAME, AD_LU_ACCOUNT_NAME, AD_LU_MEMBER_OF]
 
 # If AD_MIRROR_GROUPS is True then a QATrack+ group will be created with the
 # same name as the AD group if it doesn't exist.
-AD_MIRROR_GROUPS = False
+AD_MIRROR_GROUPS = os.environ.get('AD_MIRROR_GROUPS', 'False').lower() == 'true' # Read as boolean
 
-
-AD_CERT_FILE = ''  # AD_CERT_FILE = '/path/to/your/cert.txt'
+AD_CERT_FILE = os.environ.get('AD_CERT_FILE', '')  # AD_CERT_FILE = '/path/to/your/cert.txt'
 
 CLEAN_USERNAME_STRING = AD_CLEAN_USERNAME_STRING = ''
 

@@ -8,15 +8,13 @@ ENV PYTHONUNBUFFERED 1
 # Install system dependencies required for QATrack+
 # build-essential for compiling Python packages (e.g., psycopg2)
 # libpq-dev for PostgreSQL client libraries
-# postgresql-client for pg_isready and other client tools
+# postgresql-client for pg_isready and other client tools (NEW)
 # git for cloning git-based Python dependencies
 # dos2unix for converting script line endings
 # chromium for Selenium testing (if needed later)
 # cron for cron jobs (if re-enabled later)
-# libldap2-dev and libsasl2-dev for python-ldap (Active Directory/LDAP integration)
 RUN apt-get update && apt-get install -y \
     build-essential libpq-dev postgresql-client git dos2unix chromium cron \
-    libldap2-dev libsasl2-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a non-privileged user and group (good security practice)

@@ -377,23 +377,46 @@ CSRF_COOKIE_NAME = 'csrftoken'
 USE_X_FORWARDED_HOST = True # Set to True for Nginx reverse proxy
 HTTP_OR_HTTPS = "http" # Nginx handles HTTPS, internal traffic is HTTP
 
+# # -----------------------------------------------------------------------------
+# # Email and notification settings
+# EMAIL_NOTIFICATION_USER = None
+# EMAIL_NOTIFICATION_PWD = None
+# EMAIL_NOTIFICATION_TEMPLATE = "notification_email.html"
+# EMAIL_NOTIFICATION_SENDER = "notifications@qatrackplus.com"
+# # use either a static subject or a customizable template
+# # EMAIL_NOTIFICATION_SUBJECT = "QATrack+ Test Status Notification"
+# EMAIL_NOTIFICATION_SUBJECT_TEMPLATE = "notification_email_subject.txt"
+
+# EMAIL_FAIL_SILENTLY = True
+# EMAIL_HOST = ""  # e.g. 'smtp.gmail.com'
+# EMAIL_HOST_USER = ''  # e.g. "randle.taylor@gmail.com"
+# EMAIL_HOST_PASSWORD = 'your_password_here'
+# EMAIL_USE_TLS = True
+# EMAIL_PORT = 587
+
 # -----------------------------------------------------------------------------
 # Email and notification settings
 EMAIL_NOTIFICATION_USER = None
-EMAIL_NOTIFICATION_PWD = None
+EMAIL_NOTIFICATION_PWD = None   # No specific notification password from your Node.js setup
 EMAIL_NOTIFICATION_TEMPLATE = "notification_email.html"
-EMAIL_NOTIFICATION_SENDER = "notifications@qatrackplus.com"
+EMAIL_NOTIFICATION_SENDER = "radonc.physics@stonybrookmedicine.edu" # Using your Node.js sender
 # use either a static subject or a customizable template
 # EMAIL_NOTIFICATION_SUBJECT = "QATrack+ Test Status Notification"
 EMAIL_NOTIFICATION_SUBJECT_TEMPLATE = "notification_email_subject.txt"
 
-EMAIL_FAIL_SILENTLY = True
-EMAIL_HOST = ""  # e.g. 'smtp.gmail.com'
-EMAIL_HOST_USER = ''  # e.g. "randle.taylor@gmail.com"
-EMAIL_HOST_PASSWORD = 'your_password_here'
-EMAIL_USE_TLS = True
-EMAIL_PORT = 587
+EMAIL_FAIL_SILENTLY = False #set to True for production, set to False to see error tracebacks when sending an email fails. (should only be used for debugging)
+EMAIL_HOST = "uhmc-imail.uhmc.sunysb.edu"  # Your SMTP host from Node.js
+EMAIL_HOST_USER = ''  # No authentication required based on Node.js setup
+EMAIL_HOST_PASSWORD = '' # No authentication required based on Node.js setup
+EMAIL_USE_TLS = False # Set to False for port 25 without explicit STARTTLS.
+                      # If your SMTP server requires STARTTLS on port 25,
+                      # you might need to set this to True, but start with False.
+EMAIL_PORT = 25 # Your SMTP port from Node.js
 
+DEFAULT_FROM_EMAIL = "radonc.physics@stonybrookmedicine.edu"
+
+# added this line based on this google group discussion: "Request Data too big"
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1048576000000
 
 # -----------------------------------------------------------------------------
 # Account settings

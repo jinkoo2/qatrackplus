@@ -56,7 +56,7 @@ services:
       AD_LDAP_PORT: "389" # Use 389 for ldap:// (non-SSL). If you switch to ldaps://, change this to 636.
       # AD_LDAP_USER: "CN=QATrackService,OU=ServiceAccounts,DC=uhmc,DC=sbuh,DC=stonybrook,DC=edu" # RECOMMENDED: A dedicated bind user DN
       # AD_LDAP_PW: "YourServiceAccountPassword" # RECOMMENDED: Password for the bind user
-      AD_MIRROR_GROUPS: "False" # Set to "True" to mirror AD groups into QATrack+ groups
+      AD_MIRROR_GROUPS: "True" # Set to "True" to mirror AD groups into QATrack+ groups
       # AD_CERT_FILE: "/etc/ssl/certs/ad_server.crt" # Only needed if using LDAPS with a custom cert
     depends_on:
       - db # Ensure db service starts before app

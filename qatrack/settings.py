@@ -394,30 +394,70 @@ HTTP_OR_HTTPS = "http" # Nginx handles HTTPS, internal traffic is HTTP
 # EMAIL_USE_TLS = True
 # EMAIL_PORT = 587
 
+# # -----------------------------------------------------------------------------
+# # Email and notification settings
+# EMAIL_NOTIFICATION_USER = None
+# EMAIL_NOTIFICATION_PWD = None  
+# EMAIL_NOTIFICATION_TEMPLATE = "notification_email.html"
+# EMAIL_NOTIFICATION_SENDER = "radonc.physics@stonybrookmedicine.edu" 
+# # use either a static subject or a customizable template
+# # EMAIL_NOTIFICATION_SUBJECT = "QATrack+ Test Status Notification"
+# EMAIL_NOTIFICATION_SUBJECT_TEMPLATE = "notification_email_subject.txt"
+
+# EMAIL_FAIL_SILENTLY = False #set to True for production, set to False to see error tracebacks when sending an email fails. (should only be used for debugging)
+# EMAIL_HOST = "uhmc-imail.uhmc.sunysb.edu"  # Your SMTP host from Node.js
+# EMAIL_HOST_USER = ''  # No authentication required based on Node.js setup
+# EMAIL_HOST_PASSWORD = '' # No authentication required based on Node.js setup
+# EMAIL_USE_TLS = False # Set to False for port 25 without explicit STARTTLS.
+#                       # If your SMTP server requires STARTTLS on port 25,
+#                       # you might need to set this to True, but start with False.
+# EMAIL_PORT = 25 # Your SMTP port from Node.js
+
+# DEFAULT_FROM_EMAIL = "radonc.physics@stonybrookmedicine.edu"
+
 # -----------------------------------------------------------------------------
 # Email and notification settings
-EMAIL_NOTIFICATION_USER = None
-EMAIL_NOTIFICATION_PWD = None   # No specific notification password from your Node.js setup
+EMAIL_NOTIFICATION_USER = os.environ.get('EMAIL_NOTIFICATION_USER', None)
+print(f'EMAIL_NOTIFICATION_USER={EMAIL_NOTIFICATION_USER}')
+EMAIL_NOTIFICATION_PWD = os.environ.get('EMAIL_NOTIFICATION_PWD', None)
+print(f'EMAIL_NOTIFICATION_PWD={EMAIL_NOTIFICATION_PWD}')
 EMAIL_NOTIFICATION_TEMPLATE = "notification_email.html"
-EMAIL_NOTIFICATION_SENDER = "radonc.physics@stonybrookmedicine.edu" # Using your Node.js sender
+print(f'EMAIL_NOTIFICATION_TEMPLATE={EMAIL_NOTIFICATION_TEMPLATE}')
+EMAIL_NOTIFICATION_SENDER = os.environ.get('EMAIL_NOTIFICATION_SENDER', "notifications@qatrackplus.com")
+print(f'EMAIL_NOTIFICATION_SENDER={EMAIL_NOTIFICATION_SENDER}')
 # use either a static subject or a customizable template
 # EMAIL_NOTIFICATION_SUBJECT = "QATrack+ Test Status Notification"
 EMAIL_NOTIFICATION_SUBJECT_TEMPLATE = "notification_email_subject.txt"
+print(f'EMAIL_NOTIFICATION_SUBJECT_TEMPLATE={EMAIL_NOTIFICATION_SUBJECT_TEMPLATE}')
 
-EMAIL_FAIL_SILENTLY = False #set to True for production, set to False to see error tracebacks when sending an email fails. (should only be used for debugging)
-EMAIL_HOST = "uhmc-imail.uhmc.sunysb.edu"  # Your SMTP host from Node.js
-EMAIL_HOST_USER = ''  # No authentication required based on Node.js setup
-EMAIL_HOST_PASSWORD = '' # No authentication required based on Node.js setup
-EMAIL_USE_TLS = False # Set to False for port 25 without explicit STARTTLS.
-                      # If your SMTP server requires STARTTLS on port 25,
-                      # you might need to set this to True, but start with False.
-EMAIL_PORT = 25 # Your SMTP port from Node.js
+# Read EMAIL_FAIL_SILENTLY from environment variable, convert to boolean
+EMAIL_FAIL_SILENTLY = os.environ.get('EMAIL_FAIL_SILENTLY', 'False').lower() == 'true'
+print(f'EMAIL_FAIL_SILENTLY={EMAIL_FAIL_SILENTLY}')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
+print(f'EMAIL_HOST={EMAIL_HOST}')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+print(f'EMAIL_HOST_USER={EMAIL_HOST_USER}')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+print(f'EMAIL_HOST_PASSWORD={EMAIL_HOST_PASSWORD}')
+# Read EMAIL_USE_TLS from environment variable, convert to boolean
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False').lower() == 'true'
+print(f'EMAIL_USE_TLS={EMAIL_USE_TLS}')
+# Read EMAIL_PORT from environment variable, convert to int
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 25))
+print(f'EMAIL_PORT={EMAIL_PORT}')
 
-DEFAULT_FROM_EMAIL = "radonc.physics@stonybrookmedicine.edu"
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', "webmaster@localhost")
+print(f'DEFAULT_FROM_EMAIL={DEFAULT_FROM_EMAIL}')
 
-# added this line based on this google group discussion: "Request Data too big"
-DATA_UPLOAD_MAX_MEMORY_SIZE = 1048576000000
+# settings.py
 
+# A safe and reasonable value for the total request body size (e.g., 500 MB)
+# This will prevent an excessively large request from overwhelming your server.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 524288000
+
+# The threshold for streaming files to disk (e.g., 5 MB)
+# This is a good practice for handling large files efficiently.
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880
 # -----------------------------------------------------------------------------
 # Account settings
 

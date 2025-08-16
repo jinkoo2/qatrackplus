@@ -22,14 +22,13 @@ services:
     networks:
       - qatrack_network # Connect to our custom network
 
-  # Django Application Service (Gunicorn)
- services:
   app:
-    # Remove or comment out the 'build' section:
-    # build:
-    #   context: ../../
-    #   dockerfile: ./deploy/docker/Dockerfile
     image: jinkoo2/qatrackplus:latest # Add this line, using the tag you pushed
+    container_name: qatrackplus
+    restart: unless-stopped
+    ports:
+      - "8000:8000"   # host:container port mapping (adjust if needed)
+      
     volumes:
       # For production, you typically DON'T mount the source code:
       # - ../../:/usr/src/qatrackplus # REMOVE THIS LINE for production deployments

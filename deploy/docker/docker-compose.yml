@@ -1,92 +1,94 @@
-# docker-compose.yml for QATrack+
+# docker-compose.yml for QATrack+ Production
 # Version 3.8 is used for better compatibility with Docker Compose features.
-version: '3.8' # Recommended to keep for clarity and feature compatibility
+version: '3.8'
 
 services:
   # PostgreSQL Database Service
   db:
-    image: postgres:10-alpine # Use a lightweight PostgreSQL 10 image
+    image: postgres:10-alpine
     volumes:
-      - postgres_data:/var/lib/postgresql/data/ # Persistent volume for database data
+      - postgres_data:/var/lib/postgresql/data/
     environment:
-      # Database credentials (change these for production!)
       POSTGRES_DB: qatrackplus
       POSTGRES_USER: qatrackplus
-      POSTGRES_PASSWORD: qatrackplus_password # IMPORTANT: Change this password!
+      POSTGRES_PASSWORD: qatrackplus_password
     networks:
-      - qatrack_network # Connect to our custom network
-    restart: always # Added for robustness
+      - qatrack_network
+    restart: always
 
   # Redis Service (for Django Q background tasks)
   redis:
-    image: redis:alpine # Use a lightweight Redis image
+    image: redis:alpine
     networks:
-      - qatrack_network # Connect to our custom network
-    restart: always # Added for robustness
+      - qatrack_network
+    restart: always
 
   # Django Application Service (Gunicorn)
   app:
     build:
-      context: ../../ # Build from the root of the qatrackplus project
-      dockerfile: ./deploy/docker/Dockerfile # Specify the Dockerfile location
+      context: ../../
+      dockerfile: ./deploy/docker/Dockerfile
     volumes:
-      - static_volume:/usr/src/qatrackplus/static # Volume for Django's collected static files
-      - media_volume:/usr/src/qatrackplus/media # Volume for Django's user-uploaded media files
-      - log_data:/usr/src/qatrackplus/logs/ # Volume for Django's logs
-      # Mount the entire qatrackplus project directory into the container
-      # This is useful for development, but for production, you might only copy necessary files.
+      # These volumes are needed to collect static and media files for Nginx to serve
+      - static_volume:/usr/src/qatrackplus/static
+      - media_volume:/usr/src/qatrackplus/media
+      - log_data:/usr/src/qatrackplus/logs/
       - ../../:/usr/src/qatrackplus
+    command: /usr/src/qatrackplus/deploy/docker/init.sh # Revert to the production init script
     environment:
-      # Django settings (adjust these as needed)
       DJANGO_SETTINGS_MODULE: qatrack.settings
-      SECRET_KEY: "your_very_secret_key_here" # IMPORTANT: Change this to a strong, random key!
-      DEBUG: "True" # Set to "False" in production!
+      SECRET_KEY: "your_very_secret_key_here"
+      DEBUG: "False" # IMPORTANT: Set to "False" for production
       ALLOWED_HOSTS: "localhost,127.0.0.1,roweb3.uhmc.sbuh.stonybrook.edu"
-      TIME_ZONE: "America/New_York" # Example: "America/New_York" or "UTC"
-      # Database connection settings (must match db service environment)
+      TIME_ZONE: "America/New_York"
       DATABASE_URL: "postgres://qatrackplus:qatrackplus_password@db:5432/qatrackplus"
-      # Redis connection settings (must match redis service name)
       REDIS_URL: "redis://redis:6379/0"
       ADMIN_NAME: "Jinkoo Kim"
       ADMIN_EMAIL: "jinkoo.kim@stonybrookmedicine.edu"
-      # Active Directory Settings
       AD_DNS_NAME: "uhmc-dc-04.uhmc.sbuh.stonybrook.edu"
       AD_SEARCH_DN: "DC=uhmc,DC=sbuh,DC=stonybrook,DC=edu"
-      AD_NT4_DOMAIN: "UHMC" # Or the specific NetBIOS name for your domain
-      AD_LDAP_PORT: "389" # Use 389 for ldap:// (non-SSL). If you switch to ldaps://, change this to 636.
-      # AD_LDAP_USER: "CN=QATrackService,OU=ServiceAccounts,DC=uhmc,DC=sbuh,DC=stonybrook,DC=edu" # RECOMMENDED: A dedicated bind user DN
-      # AD_LDAP_PW: "YourServiceAccountPassword" # RECOMMENDED: Password for the bind user
-      AD_MIRROR_GROUPS: "True" # Set to "True" to mirror AD groups into QATrack+ groups
-      # AD_CERT_FILE: "/etc/ssl/certs/ad_server.crt" # Only needed if using LDAPS with a custom cert
+      AD_NT4_DOMAIN: "UHMC"
+      AD_LDAP_PORT: "389"
+      AD_MIRROR_GROUPS: "True"
+      EMAIL_NOTIFICATION_SENDER: "radonc.physics@stonybrookmedicine.edu"
+      EMAIL_FAIL_SILENTLY: "False"
+      EMAIL_HOST: "uhmc-imail.uhmc.sunysb.edu"
+      EMAIL_HOST_USER: ""
+      EMAIL_HOST_PASSWORD: ""
+      EMAIL_USE_TLS: "False"
+      EMAIL_PORT: "25"
+      DEFAULT_FROM_EMAIL: "radonc.physics@stonybrookmedicine.edu"
+      EMAIL_NOTIFICATION_USER: ""
+      EMAIL_NOTIFICATION_PWD: ""
     depends_on:
-      - db # Ensure db service starts before app
-      - redis # Ensure redis service starts before app
+      - db
+      - redis
     networks:
-      - qatrack_network # Connect to our custom network
-    restart: always # Added for robustness
+      - qatrack_network
+    restart: always
 
   # Nginx Web Server Service
   nginx:
-    image: nginx:alpine # Use a lightweight Nginx image
+    image: nginx:alpine
     volumes:
-      # Corrected paths to match Django's STATIC_ROOT and MEDIA_ROOT inside the app container
+      # Correct paths to match Django's STATIC_ROOT and MEDIA_ROOT inside the app container
       - static_volume:/vol/web/static
-      - media_volume:/wol/web/media
+      - media_volume:/vol/web/media
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro # Mount Nginx configuration
     ports:
       - "80:80" # Map host port 80 to container port 80
     depends_on:
       - app # Ensure app service starts before nginx
     networks:
-      - qatrack_network # Connect to our custom network
-    restart: always # Added for robustness
+      - qatrack_network
+    restart: always
 
 # Define named volumes for persistent data
 volumes:
   postgres_data:
   static_volume:
   media_volume:
-  log_data: # ADDED: This volume was missing from the top-level definition
+  log_data:
 
 # Define a custom network for inter-service communication
 networks:

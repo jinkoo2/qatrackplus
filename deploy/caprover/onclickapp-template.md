@@ -1,0 +1,94 @@
+captainVersion: 4
+
+services:
+  # PostgreSQL Database Service
+  $$cap_appname-db:
+    caproverExtra:
+      notExposeAsWebApp: 'true'
+    image: postgres:10-alpine
+    volumes:
+      - $$cap_appname-postgres-data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: qatrackplus
+      POSTGRES_USER: qatrackplus
+      POSTGRES_PASSWORD: qatrackplus_password
+    restart: unless-stopped
+
+  # Redis Service (for Django Q background tasks)
+  $$cap_appname-redis:
+    caproverExtra:
+      notExposeAsWebApp: 'true'
+    image: redis:alpine
+    restart: unless-stopped
+
+  # Django Application Service (Gunicorn)
+  $$cap_appname-qatrack:
+    caproverExtra:
+      notExposeAsWebApp: 'true'
+    image: jinkoo2/qatrackplus:v1.6
+    restart: unless-stopped
+    volumes:
+      - $$cap_appname-static-volume:/usr/src/qatrackplus/static
+      - $$cap_appname-media-volume:/usr/src/qatrackplus/media
+      - $$cap_appname-log-data:/usr/src/qatrackplus/logs/
+    command: /usr/src/qatrackplus/deploy/docker/init.sh
+    environment:
+      DJANGO_SETTINGS_MODULE: qatrack.settings
+      SECRET_KEY: "your_very_secret_key_here"
+      DEBUG: "False"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,myphysics.net,$$cap_appname.apps.myphysics.net"
+      TIME_ZONE: "America/New_York"
+      DATABASE_URL: "postgres://qatrackplus:qatrackplus_password@srv-captain--$$cap_appname-db:5432/qatrackplus"
+      REDIS_URL: "redis://srv-captain--$$cap_appname-redis:6379/0"
+      ADMIN_NAME: "Jinkoo Kim"
+      ADMIN_EMAIL: "jinkoo.kim@stonybrookmedicine.edu"
+      AD_DNS_NAME: "uhmc-dc-04.uhmc.sbuh.stonybrook.edu"
+      AD_SEARCH_DN: "DC=uhmc,DC=sbuh,DC=stonybrook,DC=edu"
+      AD_NT4_DOMAIN: "UHMC"
+      AD_LDAP_PORT: "389"
+      AD_MIRROR_GROUPS: "True"
+      EMAIL_NOTIFICATION_SENDER: "radonc.physics@stonybrookmedicine.edu"
+      EMAIL_FAIL_SILENTLY: "False"
+      EMAIL_HOST: "uhmc-imail.uhmc.sunysb.edu"
+      EMAIL_HOST_USER: ""
+      EMAIL_HOST_PASSWORD: ""
+      EMAIL_USE_TLS: "False"
+      EMAIL_PORT: "25"
+      DEFAULT_FROM_EMAIL: "radonc.physics@stonybrookmedicine.edu"
+      EMAIL_NOTIFICATION_USER: ""
+      EMAIL_NOTIFICATION_PWD: ""
+    depends_on:
+      - $$cap_appname-db
+      - $$cap_appname-redis
+
+  # Nginx Web Server Service
+  $$cap_appname:
+    image: jinkoo2/qatrack-nginx:v1.2
+    volumes:
+      - $$cap_appname-static-volume:/vol/web/static
+      - $$cap_appname-media-volume:/vol/web/media
+    environment:
+      INTERNAL_SERVER_NAME: "srv-captain--$$cap_appname-qatrack"
+      INTERNAL_SERVER_PORT: "8000"
+      SERVER_NAME: "$$cap_appname.apps.myphysics.net"
+    depends_on:
+      - $$cap_appname-qatrack
+    restart: unless-stopped
+
+# Define named volumes for persistent data
+volumes:
+  $$cap_appname-postgres-data:
+  $$cap_appname-static-volume:
+  $$cap_appname-media-volume:
+  $$cap_appname-log-data:
+
+caproverOneClickApp:
+  instructions:
+    start: >-
+      QATrack+ is an open-source web-based QA tracking tool built on Django. It requires a PostgreSQL database and Redis for background tasks. This template will create and configure all necessary services for you.
+    end: >
+      QATrack+ is deployed and available! It may take a minute or two for the application to be fully initialized and ready to use.
+  displayName: QATrack+
+  isOfficial: false
+  description: A web-based application for managing quality assurance processes in a radiotherapy physics department.
+  documentation: https://qatrackplus.com/

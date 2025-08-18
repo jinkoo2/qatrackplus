@@ -1,0 +1,37 @@
+# Nginx configuration template for QATrack+
+# This file will be processed at container startup to replace the SERVER_NAME variable.
+
+server {
+    listen 80; # Listen on port 80 for incoming HTTP requests
+    server_name ${SERVER_NAME}; # Placeholder for the dynamic server name
+
+    # Increase the maximum allowed size of the client request body (e.g., for file uploads)
+    client_max_body_size 1024M; # Set to 1024 megabytes, adjust as needed
+
+    # This location block handles all requests to the root and its subpaths
+    location / {
+        # Define the URI for the proxy to use. The trailing slash is crucial.
+        # It sends the request to the root of the app container.
+        proxy_pass http://${INTERNAL_SERVER_NAME}:${INTERNAL_SERVER_PORT}/;
+
+        # Set headers to correctly route traffic and provide host information
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # This block serves static files
+    location /static/ {
+        alias /vol/web/static/;
+        expires 30d; # Cache static files for 30 days
+        add_header Cache-Control "public";
+    }
+
+    # This block serves media files
+    location /media/ {
+        alias /vol/web/media/;
+        expires 30d; # Cache media files for 30 days
+        add_header Cache-Control "public";
+    }
+}

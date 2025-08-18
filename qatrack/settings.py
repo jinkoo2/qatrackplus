@@ -72,12 +72,18 @@ SITE_NAME = "QATrack+"
 
 # Use dj_database_url to parse the DATABASE_URL environment variable.
 # Provide a default for Docker Compose if the variable is not explicitly set.
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get(
+
+db_url = os.environ.get(
             'DATABASE_URL',
             'postgres://qatrackplus:qatrackplus@db:5432/qatrackplus' # Explicitly use TCP host:port
-        ),
+        )
+print('=====================')
+print('db_url='+db_url)
+print('=====================')
+
+DATABASES = {
+    'default': dj_database_url.config(
+        default=db_url,
         conn_max_age=600 # Optional: set connection max age
     )
 }
@@ -375,7 +381,7 @@ CSRF_COOKIE_NAME = 'csrftoken'
 # set to False when not running behind reverse proxy
 # Use True for e.g. CherryPy/IIS and False for Apache/mod_wsgi
 USE_X_FORWARDED_HOST = True # Set to True for Nginx reverse proxy
-HTTP_OR_HTTPS = "http" # Nginx handles HTTPS, internal traffic is HTTP
+HTTP_OR_HTTPS = "https" # Nginx handles HTTPS, internal traffic is HTTP
 
 # # -----------------------------------------------------------------------------
 # # Email and notification settings

@@ -6,12 +6,19 @@
 
 echo "Starting QATrack+ initialization script..."
 
+# --- Parse DATABASE_URL to get host and port ---
+# We use Python to parse the DATABASE_URL, which is a more robust
+# way than using shell string manipulation.
+# The `cut` command then extracts the relevant parts.
+DB_HOST=$(python -c "import os; from urllib.parse import urlparse; url = urlparse(os.environ['DATABASE_URL']); print(url.hostname)")
+DB_PORT=$(python -c "import os; from urllib.parse import urlparse; url = urlparse(os.environ['DATABASE_URL']); print(url.port)")
+
 # --- Wait for PostgreSQL to be ready ---
 # This loop waits until the PostgreSQL database is accepting connections.
 # It's crucial to ensure the database is fully up before Django tries to connect.
-echo "Waiting for PostgreSQL to be ready..."
-# Corrected pg_isready syntax: ensure the username is properly quoted.
-until pg_isready -h db -p 5432 -U "${POSTGRES_USER}"; do
+echo "Waiting for PostgreSQL to be ready at $DB_HOST:$DB_PORT..."
+# Corrected pg_isready syntax: use the parsed variables.
+until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "${POSTGRES_USER}"; do
   echo "PostgreSQL is unavailable - sleeping"
   sleep 1
 done
@@ -39,7 +46,7 @@ python manage.py createcachetable
 echo "Starting Gunicorn..."
 # The -b :8000 binds Gunicorn to all network interfaces on port 8000.
 # The -w 2 sets the number of worker processes (adjust based on your server's CPU cores).
-gunicorn qatrack.wsgi:application -w 2 -b :8000
+gunicorn --forwarded-allow-ips "*" -w 8 -b :8000 qatrack.wsgi:application
 
 # Note: If you need to create a superuser for the first time, you can do so
 # by running 'docker compose exec app python manage.py createsuperuser'

@@ -46,10 +46,12 @@ COPY . /usr/src/qatrackplus
 # Ensure the initialization script has correct line endings and is executable
 RUN dos2unix deploy/docker/init.sh && chmod +x deploy/docker/init.sh
 
+RUN mkdir -p /usr/src/qatrackplus/qatrack/logs
+
 # Change ownership of the static and media directories to the qatrackplus user.
 # This is crucial because these directories are mounted as volumes, and their
 # permissions might default to root, preventing the non-privileged qatrackplus user from writing to them.
-RUN chown -R qatrackplus:qatrackplus /usr/src/qatrackplus/static /usr/src/qatrackplus/media
+RUN chown -R qatrackplus:qatrackplus /usr/src/qatrackplus/static /usr/src/qatrackplus/media /usr/src/qatrackplus/qatrack
 
 # Switch to the non-privileged user. All subsequent commands and the application will run as this user.
 USER qatrackplus

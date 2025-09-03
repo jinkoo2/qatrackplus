@@ -9,9 +9,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
-      POSTGRES_DB: qatrackplus
-      POSTGRES_USER: qatrackplus
-      POSTGRES_PASSWORD: qatrackplus_password
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      #  openssl rand -hex 32
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     networks:
       - qatrack_network
     restart: always
@@ -37,29 +38,29 @@ services:
     command: /usr/src/qatrackplus/deploy/docker/init.sh # Revert to the production init script
     environment:
       DJANGO_SETTINGS_MODULE: qatrack.settings
-      SECRET_KEY: "your_very_secret_key_here"
+      SECRET_KEY: ${SECRET_KEY}
       DEBUG: "False" # IMPORTANT: Set to "False" for production
-      ALLOWED_HOSTS: "localhost,127.0.0.1,roweb3.uhmc.sbuh.stonybrook.edu"
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
       TIME_ZONE: "America/New_York"
-      DATABASE_URL: "postgres://qatrackplus:qatrackplus_password@db:5432/qatrackplus"
+      DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}"
       REDIS_URL: "redis://redis:6379/0"
-      ADMIN_NAME: "Jinkoo Kim"
-      ADMIN_EMAIL: "jinkoo.kim@stonybrookmedicine.edu"
-      AD_DNS_NAME: "uhmc-dc-04.uhmc.sbuh.stonybrook.edu"
-      AD_SEARCH_DN: "DC=uhmc,DC=sbuh,DC=stonybrook,DC=edu"
-      AD_NT4_DOMAIN: "UHMC"
-      AD_LDAP_PORT: "389"
-      AD_MIRROR_GROUPS: "True"
-      EMAIL_NOTIFICATION_SENDER: "radonc.physics@stonybrookmedicine.edu"
+      ADMIN_NAME: ${ADMIN_NAME}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      AD_DNS_NAME: ${AD_DNS_NAME}
+      AD_SEARCH_DN: ${AD_SEARCH_DN}
+      AD_NT4_DOMAIN: ${AD_NT4_DOMAIN}
+      AD_LDAP_PORT: ${AD_LDAP_PORT}
+      AD_MIRROR_GROUPS: ${AD_MIRROR_GROUPS}
+      EMAIL_NOTIFICATION_SENDER: ${EMAIL_NOTIFICATION_SENDER}
       EMAIL_FAIL_SILENTLY: "False"
-      EMAIL_HOST: "uhmc-imail.uhmc.sunysb.edu"
-      EMAIL_HOST_USER: ""
-      EMAIL_HOST_PASSWORD: ""
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
       EMAIL_USE_TLS: "False"
       EMAIL_PORT: "25"
-      DEFAULT_FROM_EMAIL: "radonc.physics@stonybrookmedicine.edu"
-      EMAIL_NOTIFICATION_USER: ""
-      EMAIL_NOTIFICATION_PWD: ""
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL} 
+      EMAIL_NOTIFICATION_USER: ${EMAIL_NOTIFICATION_USER}
+      EMAIL_NOTIFICATION_PWD: ${EMAIL_NOTIFICATION_PWD}
     depends_on:
       - db
       - redis
@@ -76,7 +77,7 @@ services:
       - static_volume:/vol/web/static
       - media_volume:/vol/web/media
     ports:
-      - "7598:80" # Map host port 80 to container port 80
+      - "8000:80" # Map host port 80 to container port 80
     environment:
       - INTERNAL_SERVER_NAME=${INTERNAL_SERVER_NAME:-app}
       - INTERNAL_SERVER_PORT=${INTERNAL_SERVER_PORT:-8000}

@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  nginx:
+    # Use the official Nginx image from Docker Hub
+    image: nginx:latest
+    container_name: roweb3-nginx
+    
+    # Map the ports from the host to the container.
+    # The host and container ports should match to align with your nginx.conf.
+    ports:
+      - "8443:8443"
+
+    # Mount the local Nginx configuration file and SSL certificates.
+    # This is the most important part; it tells Docker to use your custom config.
+    volumes:
+      # Mount the custom nginx.conf file from your local machine
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Mount the directory containing your certificate and key files
+      - /etc/ssl/certs:/etc/ssl/certs:ro
+      - /etc/ssl/private:/etc/ssl/private:ro
+
+    # This ensures the container restarts if it crashes, providing better uptime.
+    restart: unless-stopped

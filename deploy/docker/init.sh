@@ -29,6 +29,20 @@ echo "PostgreSQL is up and running!"
 echo "Running Django migrations..."
 python manage.py migrate --noinput
 
+
+# --- Create default superuser if environment variables are set ---
+# This is the new section that automates user creation.
+echo "Checking for default superuser environment variables..."
+if [ -n "$DJANGO_ADMIN_USERNAME" ] && [ -n "$DJANGO_ADMIN_EMAIL" ] && [ -n "$DJANGO_ADMIN_PASSWORD" ]; then
+  echo "Attempting to create or update superuser..."
+    python manage.py createsuperuser3 \
+      --username "$DJANGO_ADMIN_USERNAME" \
+      --email "$DJANGO_ADMIN_EMAIL" \
+      --password "$DJANGO_ADMIN_PASSWORD"
+else
+  echo "Superuser environment variables not set. Skipping user creation."
+fi
+
 # --- Collect static files ---
 # This gathers all static files from Django apps into a single directory
 # so Nginx can serve them.

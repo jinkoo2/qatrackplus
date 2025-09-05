@@ -25,7 +25,7 @@ services:
   $$cap_appname-qatrack:
     caproverExtra:
       notExposeAsWebApp: 'true'
-    image: jinkoo2/qatrackplus:v1.6
+    image: jinkoo2/qatrackplus:v1.7
     restart: unless-stopped
     volumes:
       - $$cap_appname-static-volume:/usr/src/qatrackplus/static
@@ -34,6 +34,9 @@ services:
     command: /usr/src/qatrackplus/deploy/docker/init.sh
     environment:
       DJANGO_SETTINGS_MODULE: qatrack.settings
+      DJANGO_ADMIN_USERNAME: su
+      DJANGO_ADMIN_EMAIL: su@example.com
+      DJANGO_ADMIN_PASSWORD: su_password
       SECRET_KEY: "your_very_secret_key_here"
       DEBUG: "False"
       ALLOWED_HOSTS: "localhost,127.0.0.1,myphysics.net,$$cap_appname.apps.myphysics.net"
@@ -63,7 +66,7 @@ services:
 
   # Nginx Web Server Service
   $$cap_appname:
-    image: jinkoo2/qatrack-nginx:v1.2
+    image: jinkoo2/qatrack-nginx:v1.3
     volumes:
       - $$cap_appname-static-volume:/vol/web/static
       - $$cap_appname-media-volume:/vol/web/media
